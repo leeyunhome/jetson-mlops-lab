@@ -11,7 +11,7 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 | Day | 주제 | 상태 | 노트북 | 산출물 |
 |---|---|---|---|---|
 | 0 | 환경 구축 | 🔄 | - | - |
-| 1 | PyTorch → HuggingFace | ⬜ | - | - |
+| 1 | PyTorch → HuggingFace | 🔄 | [day1_practice](notebooks/day1_practice.ipynb) | - |
 | 2 | 추론의 원리 (KV Cache, TTFT/TPOT) | ⬜ | - | - |
 | 3 | 추론 서버 (FastAPI + 배칭) | ⬜ | - | - |
 | 4 | 모델 양자화 (INT8/INT4) | ⬜ | - | - |
