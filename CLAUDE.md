@@ -1,0 +1,52 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 프로젝트 개요
+
+Jetson Orin Nano(JetPack 7.2, L4T R39) 한 대로 LLM MLOps 파이프라인 핵심 구성요소(추론 서빙, 모델 최적화, 파인튜닝, 모니터링)를 직접 구현하며 학습하는 7일 스프린트 기록. 클라우드 멀티노드 대신 리소스가 제한된 엣지 디바이스에서 원리를 바닥부터 익히는 것이 목적.
+
+## 핵심 아키텍처: 코드는 이 저장소에, 실행은 원격 Jetson에서
+
+이 저장소의 노트북/스크립트는 로컬에서 실행되지 않는다. 실제 실행 환경은 물리적으로 분리된 Jetson Orin Nano이며, 접근 경로는 다음과 같은 이중 SSH 홉이다:
+
+```
+작업 PC → codeql-host (10.10.237.5, 게이트웨이 리눅스 머신) → Jetson (192.168.55.1, USB 브릿지로만 연결됨)
+```
+
+- Jetson은 codeql-host에 USB로 연결되어 `192.168.55.1`(Jetson) ↔ `192.168.55.100`(codeql-host) 링크로만 통신한다. Jetson은 codeql-host를 거치지 않고는 외부에서 직접 도달할 수 없다.
+- codeql-host 로그인 계정: `codeql-host`. Jetson 로그인 계정: `manager`. 비밀번호는 코드/문서에 남기지 않으므로 별도 확인 필요.
+- Jetson에는 `sshpass`가 설치되어 있어 codeql-host에서 Jetson으로 비밀번호 기반 비대화형 접속이 가능하다: `sshpass -p <pw> ssh manager@192.168.55.1 '<command>'`.
+- Jetson의 Python 가상환경은 `~/mlops-lab-env` (Python 3.12.3). torch/transformers/accelerate 등은 전부 이 venv 안에 설치되어 있고, 시스템 파이썬에는 없다.
+
+## Jupyter 커널 연결 방법
+
+Jetson의 Jupyter Lab 서버는 **의도적으로 `127.0.0.1`(로컬호스트 전용)에만 바인딩**되어 있다 — 네트워크에 코드 실행 서비스를 노출하지 않기 위함. 접근하려면 SSH 포트포워딩만 사용해야 한다 (`--ip=0.0.0.0` 등으로 네트워크에 노출하는 방식은 지양):
+
+1. codeql-host에서 Jetson으로: `ssh -N -L 8888:127.0.0.1:8888 manager@192.168.55.1` (백그라운드로 유지)
+2. 작업 PC에서 codeql-host로: `ssh -N -L 8888:127.0.0.1:8888 codeql-host@10.10.237.5` (백그라운드로 유지)
+3. VS Code에서 노트북 열고 커널 선택 → **Existing Jupyter Server** → `http://localhost:8888/?token=<Jupyter 시작 로그에 출력된 토큰>`
+4. 커널 목록에 뜨는 **"MLOps Lab (Jetson)"**(`kernelspec: mlops-lab`) 선택 — 기본 "Python 3 (ipykernel)"과 동일한 venv를 가리키므로 아무거나 골라도 되지만 이름이 명확한 쪽을 권장.
+
+Jupyter 서버 실행 (Jetson 쪽, `~`에서):
+```
+nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > ~/jupyter.log 2>&1 &
+```
+토큰은 `~/jupyter.log`에 출력된다.
+
+## 알려진 하드웨어/소프트웨어 제약
+
+- **GPU compute capability 8.7 (Orin) 관련 경고**: PyPI의 일반 torch 휠은 sm_87 전용 사전 컴파일 커널을 포함하지 않아 `torch.cuda.is_available()` 등에서 "No published PyTorch CUDA builds... support this GPU" 경고가 뜬다. 이는 아키텍처가 잘못 설치된 게 아니라(aarch64 휠 맞음), 인접 CC(8.0)용 PTX를 런타임에 JIT 컴파일해서 대체 실행하기 때문 — 기본 연산(matmul, 소형 LLM 추론)은 정상 동작하지만 첫 호출이 느리다. 단, **flash-attention/xformers/bitsandbytes처럼 아키텍처별 사전 컴파일 커널에 의존하는 라이브러리는 PTX 폴백이 없어 설치·동작 자체가 안 될 수 있음** — Day 5(LoRA) 진행 시 NVIDIA jetson-containers/dusty-nv 배포판 검토 필요.
+- **메모리는 8GB 통합 메모리(LPDDR5)** — CPU/OS와 공유되므로 모델에 실제로 쓸 수 있는 여유는 5~6GB 수준. 7B급 fp16 모델은 애초에 안 올라가며, 4bit 양자화나 3B급 이하 모델 중심으로 설계할 것.
+- **HuggingFace `AutoModelForCausalLM.from_pretrained(..., torch_dtype=...)`의 `torch_dtype` 인자는 deprecated** — 현재 설치된 transformers 버전에서는 `dtype=`을 사용해야 경고 없이 동작한다.
+
+## 진행 현황 및 구조
+
+Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). 각 Day 완료 시 README 표의 상태 이모지와 노트북 링크를 함께 갱신할 것.
+
+```
+notebooks/   각 Day별 실습용 / 문제풀이 노트북 쌍 (예: day1_practice.ipynb)
+serving/     FastAPI 기반 추론 서버 코드
+scripts/     환경 구축 및 포트폴리오 자동 게시 스크립트
+docs/        벤치마크 결과, 회고
+```
