@@ -39,6 +39,13 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - **GPU compute capability 8.7 (Orin) 관련 경고**: PyPI의 일반 torch 휠은 sm_87 전용 사전 컴파일 커널을 포함하지 않아 `torch.cuda.is_available()` 등에서 "No published PyTorch CUDA builds... support this GPU" 경고가 뜬다. 이는 아키텍처가 잘못 설치된 게 아니라(aarch64 휠 맞음), 인접 CC(8.0)용 PTX를 런타임에 JIT 컴파일해서 대체 실행하기 때문 — 기본 연산(matmul, 소형 LLM 추론)은 정상 동작하지만 첫 호출이 느리다. 단, **flash-attention/xformers/bitsandbytes처럼 아키텍처별 사전 컴파일 커널에 의존하는 라이브러리는 PTX 폴백이 없어 설치·동작 자체가 안 될 수 있음** — Day 5(LoRA) 진행 시 NVIDIA jetson-containers/dusty-nv 배포판 검토 필요.
 - **메모리는 8GB 통합 메모리(LPDDR5)** — CPU/OS와 공유되므로 모델에 실제로 쓸 수 있는 여유는 5~6GB 수준. 7B급 fp16 모델은 애초에 안 올라가며, 4bit 양자화나 3B급 이하 모델 중심으로 설계할 것.
 - **HuggingFace `AutoModelForCausalLM.from_pretrained(..., torch_dtype=...)`의 `torch_dtype` 인자는 deprecated** — 현재 설치된 transformers 버전에서는 `dtype=`을 사용해야 경고 없이 동작한다.
+- **`tokenizer.apply_chat_template(..., return_tensors="pt")`를 바로 쓰지 말 것** — 이 환경에서는 `.shape` 접근 시 `AttributeError`가 난다. 항상 `apply_chat_template(messages, tokenize=False, add_generation_prompt=True)`로 문자열을 얻은 뒤 `tokenizer(text, return_tensors="pt")`로 별도 토큰화할 것.
+- **`model.generate(..., use_cache=False)`가 이 transformers 버전에서 무시된다** — 실제로 측정해도 속도 차이가 거의 없다. KV cache 효과를 보여주려면 `model()`을 직접 반복 호출하는 수동 루프로 "캐시 재사용 vs 매 스텝 전체 재계산"을 구현해야 한다 (Day2 참고).
+- **`bitsandbytes`는 import와 소규모 토이 텐서 연산은 성공하지만, 실제 모델 `generate()` 도중 `cuBLAS API failed with status 15`로 실패한다** — 토이 예제 성공을 신뢰하지 말 것. `load_in_8bit`/`load_in_4bit` 전반에 이 문제가 있다.
+- **`optimum-quanto`의 int4(AWQ 커널)는 최초 실행 시 CUDA 확장 여러 개를 동시에 JIT 컴파일하며 8GB RAM + 2GB swap을 전부 소진해 기기 전체가 멈출 수 있다** (실제로 재현됨, load average 20 근접, SSH 응답 불가 수 분 지속). `ninja` 미설치 시엔 먼저 그 에러가 뜨고, 설치 후 재시도하면 이 메모리 고갈이 발생한다. int4가 필요하면 GGUF+llama.cpp 사전 양자화 체크포인트 경로를 쓸 것 — 즉석 컴파일이 없다.
+- **venv 안의 콘솔 스크립트(예: `ninja`)가 PATH에 없다** — `~/mlops-lab-env/bin/python3`를 직접 호출하는 방식(activate 스크립트 미실행)에서는 `os.environ["PATH"]`에 `~/mlops-lab-env/bin`이 안 잡혀 있어, 이를 필요로 하는 JIT 컴파일 등이 실패할 수 있다. 필요시 `os.environ["PATH"] = os.path.expanduser("~/mlops-lab-env/bin") + os.pathsep + os.environ.get("PATH", "")`로 직접 보정.
+- **matplotlib/pandas/fastapi/uvicorn/peft/datasets/ninja/optimum-quanto/bitsandbytes는 기본 venv에 없다** — 필요할 때 그때그때 `~/mlops-lab-env/bin/pip install`로 설치했음 (전부 aarch64 설치 자체는 문제없이 됨).
+- **스트리밍 기반 측정(`TextIteratorStreamer`)에서 워밍업 없이 콜드 스타트로 측정하면 TTFT가 수십 초(관측치: 49초)까지 튈 수 있다** — Day1/Day2에서 본 CC8.7 PTX JIT 비용과 같은 원인이지만 스트리밍 경로에서는 유독 크게 나타났다. 성능 측정 코드에는 항상 워밍업 호출을 먼저 넣을 것.
 
 ## 진행 현황 및 구조
 
