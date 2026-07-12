@@ -10,13 +10,13 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 
 | Day | 주제 | 상태 | 노트북 | 산출물 |
 |---|---|---|---|---|
-| 0 | 환경 구축 | 🔄 | - | - |
-| 1 | PyTorch → HuggingFace | 🔄 | [day1_practice](notebooks/day1_practice.ipynb) | - |
-| 2 | 추론의 원리 (KV Cache, TTFT/TPOT) | ⬜ | - | - |
-| 3 | 추론 서버 (FastAPI + 배칭) | ⬜ | - | - |
-| 4 | 모델 양자화 (INT8/INT4) | ⬜ | - | - |
-| 5 | LoRA 파인튜닝 (PEFT) | ⬜ | - | - |
-| 6 | 평가 · 모니터링 대시보드 | ⬜ | - | - |
+| 0 | 환경 구축 | ✅ | - | venv, Jupyter, torch/transformers 설치 및 검증 |
+| 1 | PyTorch → HuggingFace | ✅ | [day1_practice](notebooks/day1_practice.ipynb) | - |
+| 2 | 추론의 원리 (KV Cache, TTFT/TPOT) | ✅ | [day2_practice](notebooks/day2_practice.ipynb) | - |
+| 3 | 추론 서버 (FastAPI + 배칭) | ✅ | [day3_practice](notebooks/day3_practice.ipynb) | [serving/server.py](serving/server.py) |
+| 4 | 모델 양자화 (INT8/INT4) | ✅ | [day4_practice](notebooks/day4_practice.ipynb) | - |
+| 5 | LoRA 파인튜닝 (PEFT) | ✅ | [day5_practice](notebooks/day5_practice.ipynb) | - |
+| 6 | 평가 · 모니터링 대시보드 | ✅ | [day6_practice](notebooks/day6_practice.ipynb) | - |
 
 ## 구조
 
