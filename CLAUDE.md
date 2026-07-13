@@ -11,19 +11,20 @@ Jetson Orin Nano(JetPack 7.2, L4T R39) 한 대로 LLM MLOps 파이프라인 핵�
 이 저장소의 노트북/스크립트는 로컬에서 실행되지 않는다. 실제 실행 환경은 물리적으로 분리된 Jetson Orin Nano이며, 접근 경로는 다음과 같은 이중 SSH 홉이다:
 
 ```
-작업 PC → codeql-host (10.10.237.5, 게이트웨이 리눅스 머신) → Jetson (192.168.55.1, USB 브릿지로만 연결됨)
+작업 PC → codeql-host (10.10.237.5, 게이트웨이 리눅스 머신) → Jetson (192.168.237.8, 이더넷 고정 IP)
 ```
 
-- Jetson은 codeql-host에 USB로 연결되어 `192.168.55.1`(Jetson) ↔ `192.168.55.100`(codeql-host) 링크로만 통신한다. Jetson은 codeql-host를 거치지 않고는 외부에서 직접 도달할 수 없다.
+- **주 연결 경로는 이더넷 고정 IP `192.168.237.8`이다** (codeql-host의 `enp4s0`와 같은 `192.168.237.0/16` 대역). USB C타입 케이블로 `192.168.55.1`(l4tbr0 브릿지, USB 전용 연결) 경로도 여전히 존재하지만, 이건 다른 용도로 케이블을 뺄 수도 있는 **보조/폴백 경로**다 — USB가 물리적으로 빠져 있어도 이더넷이 연결되어 있으면 Jetson 접속에는 문제 없다.
 - codeql-host 로그인 계정: `codeql-host`. Jetson 로그인 계정: `manager`. 비밀번호는 코드/문서에 남기지 않으므로 별도 확인 필요.
-- Jetson에는 `sshpass`가 설치되어 있어 codeql-host에서 Jetson으로 비밀번호 기반 비대화형 접속이 가능하다: `sshpass -p <pw> ssh manager@192.168.55.1 '<command>'`.
+- Jetson에는 `sshpass`가 설치되어 있어 codeql-host에서 Jetson으로 비밀번호 기반 비대화형 접속이 가능하다: `sshpass -p <pw> ssh manager@192.168.237.8 '<command>'`.
 - Jetson의 Python 가상환경은 `~/mlops-lab-env` (Python 3.12.3). torch/transformers/accelerate 등은 전부 이 venv 안에 설치되어 있고, 시스템 파이썬에는 없다.
+- 작업 PC의 `~/.ssh/config`에 `Host jetson`(HostName `192.168.237.8`, ProxyJump `codeql-host`) alias가 등록되어 있어 `ssh jetson` 한 줄로 접속 가능.
 
 ## Jupyter 커널 연결 방법
 
 Jetson의 Jupyter Lab 서버는 **의도적으로 `127.0.0.1`(로컬호스트 전용)에만 바인딩**되어 있다 — 네트워크에 코드 실행 서비스를 노출하지 않기 위함. 접근하려면 SSH 포트포워딩만 사용해야 한다 (`--ip=0.0.0.0` 등으로 네트워크에 노출하는 방식은 지양):
 
-1. codeql-host에서 Jetson으로: `ssh -N -L 8888:127.0.0.1:8888 manager@192.168.55.1` (백그라운드로 유지)
+1. codeql-host에서 Jetson으로: `ssh -N -L 8888:127.0.0.1:8888 manager@192.168.237.8` (백그라운드로 유지)
 2. 작업 PC에서 codeql-host로: `ssh -N -L 8888:127.0.0.1:8888 codeql-host@10.10.237.5` (백그라운드로 유지)
 3. VS Code에서 노트북 열고 커널 선택 → **Existing Jupyter Server** → `http://localhost:8888/?token=<Jupyter 시작 로그에 출력된 토큰>`
 4. 커널 목록에 뜨는 **"MLOps Lab (Jetson)"**(`kernelspec: mlops-lab`) 선택 — 기본 "Python 3 (ipykernel)"과 동일한 venv를 가리키므로 아무거나 골라도 되지만 이름이 명확한 쪽을 권장.
