@@ -50,7 +50,7 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 
 ## 진행 현황 및 구조
 
-Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). 각 Day 완료 시 README 표의 상태 이모지와 노트북 링크를 함께 갱신할 것.
+Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). **✅(직접 실습 완료)와 📝 준비됨(노트북 작성·Jetson 실기기 검증은 끝났지만 사용자가 아직 직접 실습 전)을 구분할 것** — Claude가 노트북을 대신 작성/검증했다고 곧바로 ✅로 표시하지 말고, 사용자가 실제로 그 Day를 진행했다고 확인해줄 때만 ✅로 올릴 것.
 
 ```
 notebooks/   각 Day별 실습용 / 문제풀이 노트북 쌍 (예: day1_practice.ipynb)
