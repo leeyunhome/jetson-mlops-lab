@@ -31,3 +31,7 @@ docs/        벤치마크 결과, 회고
 
 - Jetson Orin Nano, JetPack 7.2 (L4T R39)
 - 노트북은 VSCode에서 편집, 커널은 Jetson의 Jupyter 서버에 연결하여 실행
+
+## 참고
+
+- [docs/시행착오_기록.md](docs/시행착오_기록.md) — 환경 구성, Day별로 겪은 문제와 원인/해결 과정 정리
