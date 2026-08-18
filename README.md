@@ -20,6 +20,12 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 
 > ✅ = 직접 실습 완료 · 📝 준비됨 = 노트북 작성 및 Jetson 실기기에서 코드 검증까지는 끝났지만 아직 직접 실습 전
 
+## 추가 트랙 (LLM 스프린트와 별개)
+
+| 주제 | 상태 | 노트북 | 핵심 |
+|---|---|---|---|
+| 비전 모델 경량화 (torchvision 양자화 + TensorRT) | 📝 준비됨 | [vision_compression_practice](notebooks/vision_compression_practice.ipynb) | ResNet-18을 INT8 양자화(CPU) vs TensorRT(GPU, FP32/FP16/INT8)로 비교. TensorRT INT8이 PyTorch eager 대비 ~10배 빠름(실측) |
+
 ## 구조
 
 ```

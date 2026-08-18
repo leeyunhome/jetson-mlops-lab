@@ -48,6 +48,14 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - **matplotlib/pandas/fastapi/uvicorn/peft/datasets/ninja/optimum-quanto/bitsandbytes는 기본 venv에 없다** — 필요할 때 그때그때 `~/mlops-lab-env/bin/pip install`로 설치했음 (전부 aarch64 설치 자체는 문제없이 됨).
 - **스트리밍 기반 측정(`TextIteratorStreamer`)에서 워밍업 없이 콜드 스타트로 측정하면 TTFT가 수십 초(관측치: 49초)까지 튈 수 있다** — Day1/Day2에서 본 CC8.7 PTX JIT 비용과 같은 원인이지만 스트리밍 경로에서는 유독 크게 나타났다. 성능 측정 코드에는 항상 워밍업 호출을 먼저 넣을 것.
 
+### 비전 경량화 트랙 (vision_compression_practice.ipynb) 관련
+- **`torchvision`은 반드시 `pip install --no-deps torchvision`으로 설치할 것** — 그냥 설치하면 의존성 해결 중 특수 빌드된 `torch 2.13.0+cu130`(Jetson CUDA 빌드)을 일반 빌드로 덮어써 CUDA가 깨질 수 있다. `--no-deps`로 0.28.0 설치 시 torch 안 건드리고 CUDA 정상 동작 확인함.
+- **PyTorch 양자화 백엔드 기본값이 `x86`이라 aarch64에서 `RuntimeError: unknown architecture`가 난다** — `torch.backends.quantized.engine = "qnnpack"`(ARM 백엔드)를 명시해야 동작. torchvision `resnet18(quantize=True)`의 내부 백엔드 자동선택도 실패하므로, quantizable 아키텍처에 float 가중치를 얹고 수동 PTQ(fuse→qconfig(qnnpack)→prepare→calibrate→convert)로 진행함.
+- **CPU INT8 양자화는 크기는 ~1/4로 줄지만 이 Jetson CPU에서 오히려 느림**(실측 FP32 734ms vs INT8 906ms/batch16). torchvision 양자화 모델은 CPU 전용이라 GPU도 못 씀 — 엣지 속도 향상은 TensorRT로 가야 한다는 결론.
+- **TensorRT는 `trtexec`가 JetPack에 기본 포함(`/usr/bin/trtexec`)** — 별도 파이썬 바인딩 불필요. PyTorch→ONNX→`trtexec`로 엔진 빌드+벤치. 실측: ResNet-18 batch16 GPU Compute Time이 PyTorch eager 56ms → TRT FP32 27.8 → FP16 10.6 → INT8 5.4ms (INT8은 eager 대비 ~10배).
+- **torch 2.13 ONNX export는 `onnxscript` 필요**하고, 큰 가중치를 **외부 데이터 파일(`*.onnx.data`)로 분리 저장**한다 — `.onnx`와 `.onnx.data`가 같은 폴더에 함께 있어야 trtexec가 읽는다.
+- **PowerShell→plink 원격 명령에서 `$?`를 쓰지 말 것** — PowerShell이 자체 `$?`(True/False)로 확장해버려 원격 bash에 엉뚱하게 전달된다. 원격 종료코드가 필요하면 다른 방식(로그 파일 확인 등)을 쓸 것. (`\"a|b\"` 형태의 grep 패턴도 PowerShell 파서가 깨뜨리므로, 원격에서 grep 대신 파일로 저장 후 `tail`로 읽는 게 안전.)
+
 ## 진행 현황 및 구조
 
 Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). **✅(직접 실습 완료)와 📝 준비됨(노트북 작성·Jetson 실기기 검증은 끝났지만 사용자가 아직 직접 실습 전)을 구분할 것** — Claude가 노트북을 대신 작성/검증했다고 곧바로 ✅로 표시하지 말고, 사용자가 실제로 그 Day를 진행했다고 확인해줄 때만 ✅로 올릴 것.
