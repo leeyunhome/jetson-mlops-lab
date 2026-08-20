@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jetson MLOps Lab</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5c5c5c;
+    --border: #e0e0e0;
+    --card: #f7f7f7;
+    --accent: #2b6cb0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161a;
+      --fg: #e8e8e8;
+      --muted: #a0a0a0;
+      --border: #2c2f36;
+      --card: #1c1f25;
+      --accent: #7aa7d9;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161a;
+    --fg: #e8e8e8;
+    --muted: #a0a0a0;
+    --border: #2c2f36;
+    --card: #1c1f25;
+    --accent: #7aa7d9;
+  }
+  body {
+    margin: 0;
+    padding: 3rem 1.25rem 5rem;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    line-height: 1.7;
+  }
+  main { max-width: 46rem; margin: 0 auto; }
+  h1 { font-size: 2rem; margin: 0 0 .5rem; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin: 0 0 2.5rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; }
+  a { color: var(--accent); }
+  .card {
+    display: block;
+    border: 1px solid var(--border);
+    background: var(--card);
+    border-radius: 10px;
+    padding: 1.25rem 1.4rem;
+    text-decoration: none;
+    color: inherit;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card h3 { margin: 0 0 .4rem; font-size: 1.05rem; color: var(--accent); }
+  .card p { margin: 0; color: var(--muted); font-size: .93rem; }
+  .facts { list-style: none; padding: 0; margin: 0; }
+  .facts li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .93rem;
+  }
+  .facts li span:first-child { color: var(--muted); }
+  footer {
+    margin-top: 3.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .88rem;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Jetson MLOps Lab</h1>
+  <p class="sub">Jetson Orin Nano 한 대로 추론 최적화 · 모델 경량화를 바닥부터 구현한 실습 기록</p>
+
+  <h2>비전 모델 경량화 트랙</h2>
+  <a class="card" href="notebooks/vision_compression_practice.html">
+    <h3>ResNet-18 INT8 양자화 &amp; TensorRT 벤치마크</h3>
+    <p>PyTorch PTQ(qnnpack, CPU)와 TensorRT(FP32/FP16/INT8, GPU)를 같은 모델에 적용해
+       정확도 · 지연시간 · 모델 크기의 트레이드오프를 실측 비교했습니다.</p>
+  </a>
+
+  <h2>실행 환경</h2>
+  <ul class="facts">
+    <li><span>디바이스</span><span>Jetson Orin Nano (JetPack 7.2, L4T R39)</span></li>
+    <li><span>GPU</span><span>Orin, Compute Capability 8.7</span></li>
+    <li><span>프레임워크</span><span>PyTorch 2.13.0+cu130 · torchvision 0.28.0</span></li>
+    <li><span>양자화 백엔드</span><span>qnnpack (ARM)</span></li>
+  </ul>
+
+  <footer>
+    소스 코드 · 노트북 원본:
+    <a href="https://github.com/leeyunhome/jetson-mlops-lab">github.com/leeyunhome/jetson-mlops-lab</a>
+  </footer>
+</main>
+</body>
+</html>
