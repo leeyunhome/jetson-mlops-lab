@@ -107,13 +107,33 @@ def parse_cpu_results(text: str) -> dict:
     return results
 
 
+EAGER_LINE = re.compile(
+    r"^PyTorch FP32 eager \(GPU\):\s+([\d.]+) ms/batch\(\d+\)", re.MULTILINE
+)
+
+
+def parse_eager(text: str) -> float | None:
+    """노트북이 직접 잰 eager 기준선이 있으면 그 값을 쓴다.
+
+    노트북 셀 12를 실행하면 이 줄이 생긴다. 사용자가 자기 기기에서 잰 값이므로
+    별도로 기록해 둔 device_measurements.json 값보다 우선한다.
+    """
+    match = EAGER_LINE.search(text)
+    return float(match.group(1)) if match else None
+
+
 def build() -> dict:
     device = json.loads((LOG_DIR / "device_measurements.json").read_text(encoding="utf-8"))
-    cpu = parse_cpu_results(notebook_stdout(NOTEBOOK))
+    stdout = notebook_stdout(NOTEBOOK)
+    cpu = parse_cpu_results(stdout)
     engine_bytes = device["engine_bytes"]
 
     eager = device["pytorch_eager_gpu"]
-    baseline_ms = eager["mean_ms"]
+    notebook_eager = parse_eager(stdout)
+    baseline_ms = notebook_eager if notebook_eager is not None else eager["mean_ms"]
+    baseline_source = (
+        "노트북 셀 12 실행 결과" if notebook_eager is not None else "기기 직접 측정"
+    )
 
     configs = [
         {
@@ -127,6 +147,7 @@ def build() -> dict:
             "size_mb": round(cpu["fp32"]["size_mb"], 1),
             "speedup_vs_eager": 1.0,
             "note": "TensorRT 없이 그대로 실행한 기준선",
+            "source": baseline_source,
         }
     ]
 

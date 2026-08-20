@@ -20,11 +20,12 @@
       "precision": "FP32",
       "runtime": "PyTorch",
       "device": "GPU",
-      "mean_ms": 57.253,
+      "mean_ms": 55.96,
       "median_ms": 57.2693,
       "size_mb": 44.6,
       "speedup_vs_eager": 1.0,
-      "note": "TensorRT 없이 그대로 실행한 기준선"
+      "note": "TensorRT 없이 그대로 실행한 기준선",
+      "source": "노트북 셀 12 실행 결과"
     },
     {
       "id": "trt_fp32",
@@ -35,7 +36,7 @@
       "mean_ms": 27.8397,
       "median_ms": 27.8372,
       "size_mb": 44.8,
-      "speedup_vs_eager": 2.06,
+      "speedup_vs_eager": 2.01,
       "latency_ms": {
         "min": 28.4766,
         "max": 28.592,
@@ -61,7 +62,7 @@
       "mean_ms": 10.6346,
       "median_ms": 10.6365,
       "size_mb": 22.5,
-      "speedup_vs_eager": 5.38,
+      "speedup_vs_eager": 5.26,
       "latency_ms": {
         "min": 11.2563,
         "max": 11.4885,
@@ -87,7 +88,7 @@
       "mean_ms": 5.41365,
       "median_ms": 5.41479,
       "size_mb": 11.5,
-      "speedup_vs_eager": 10.58,
+      "speedup_vs_eager": 10.34,
       "latency_ms": {
         "min": 6.00024,
         "max": 6.11269,
