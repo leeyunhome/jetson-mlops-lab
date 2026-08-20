@@ -105,17 +105,35 @@ def collect_outputs(cell: dict) -> tuple[list[str], str | None]:
     return stdout, error
 
 
+def cell_key(cell: dict, seen: dict[str, int]) -> str:
+    """셀을 위치와 무관하게 식별한다.
+
+    nbformat 4.5의 `id`가 있으면 그것이 가장 안정적이다. 없는 셀은 소스 해시로
+    대신한다 — 앞에 셀이 끼어들어 번호가 밀려도 같은 셀로 남는다. (번호를 키로
+    쓰면 셀 하나만 삽입해도 그 뒤 전부가 "재실행"으로 잡힌다.)
+    """
+    cid = cell.get("id")
+    if cid:
+        return f"id:{cid}"
+    digest = hashlib.sha256(
+        "".join(cell.get("source", [])).encode("utf-8")
+    ).hexdigest()[:12]
+    count = seen[digest] = seen.get(digest, 0) + 1
+    return f"src:{digest}:{count}"
+
+
 def read_cells(path: Path) -> list[Cell]:
     nb = json.loads(path.read_text(encoding="utf-8"))
     raw_cells = nb.get("cells", [])
     cells: list[Cell] = []
+    seen: dict[str, int] = {}
     for i, cell in enumerate(raw_cells):
         if cell.get("cell_type") != "code":
             continue
         stdout, error = collect_outputs(cell)
         cells.append(
             Cell(
-                key=cell.get("id") or f"index:{i}",
+                key=cell_key(cell, seen),
                 index=i,
                 execution_count=cell.get("execution_count"),
                 source="".join(cell.get("source", [])),
@@ -312,6 +330,13 @@ def process(notebook: Path, repo: Path, args: argparse.Namespace) -> None:
     if not previous and not args.commit_existing:
         save_state(store, cells)
         log(f"{notebook.name}: 현재 상태를 기준선으로 기록 (이번엔 커밋하지 않음)")
+        return
+
+    # 키 방식이 바뀌었거나 노트북이 통째로 교체되면 이전 스냅샷과 하나도 겹치지
+    # 않는다. 이때 전부 커밋하면 노이즈만 남으므로 기준선을 다시 잡는다.
+    if previous and not (set(previous) & {c.key for c in cells}):
+        save_state(store, cells)
+        log(f"{notebook.name}: 이전 스냅샷과 대응되는 셀이 없어 기준선을 다시 기록")
         return
 
     changed = newly_executed(cells, previous)
