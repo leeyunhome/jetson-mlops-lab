@@ -26,7 +26,7 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 
 | 주제 | 상태 | 노트북 | 핵심 |
 |---|---|---|---|
-| 비전 모델 경량화 (torchvision 양자화 + TensorRT) | 📝 준비됨 | [vision_compression_practice](notebooks/vision_compression_practice.ipynb) | ResNet-18을 INT8 양자화(CPU) vs TensorRT(GPU, FP32/FP16/INT8)로 비교. TensorRT INT8이 PyTorch eager 대비 ~10배 빠름(실측) |
+| 비전 모델 경량화 (torchvision 양자화 + TensorRT) | 📝 준비됨 | [vision_compression_practice](notebooks/vision_compression_practice.ipynb) | ResNet-18을 INT8 양자화(CPU) vs TensorRT(GPU, FP32/FP16/INT8)로 비교. TensorRT INT8이 PyTorch eager 대비 10.6배 빠름(실측) |
 
 ## 구조
 
@@ -34,8 +34,24 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 notebooks/   각 Day별 실습용 / 문제풀이 노트북 쌍
 serving/     FastAPI 기반 추론 서버 코드
 scripts/     환경 구축 및 포트폴리오 자동 게시 스크립트
+benchmarks/  측정 원본(trtexec 로그)과 이를 정리한 데이터셋
+site/        GitHub Pages 랜딩 페이지 (차트)
 docs/        벤치마크 결과, 회고
 ```
+
+## 측정 결과 시각화
+
+랜딩 페이지의 차트는 `benchmarks/vision_compression.json` 하나만 바라봅니다. 이 파일은
+`trtexec` 원본 로그와 노트북 셀 출력에서 기계적으로 생성되므로, 그래프의 모든 숫자는
+저장소 안의 원본까지 되짚어 확인할 수 있습니다.
+
+```bash
+python scripts/collect_benchmarks.py   # 로그 + 노트북 출력 → 데이터셋 갱신
+```
+
+차트는 외부 라이브러리 없이 인라인 SVG로 그리며, 라이트/다크 두 모드 모두에서
+색각 이상 대비 검사를 통과한 팔레트를 씁니다. 값은 색에만 기대지 않도록 마크 옆에
+직접 표기하고, 같은 수치를 표로도 제공합니다.
 
 ## 환경
 

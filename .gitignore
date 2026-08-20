@@ -5,6 +5,8 @@ __pycache__/
 venv/
 .env
 *.log
+# 벤치마크 원본은 결과를 검증할 수 있도록 예외로 추적한다
+!benchmarks/logs/*.log
 models/
 *.engine
 *.onnx

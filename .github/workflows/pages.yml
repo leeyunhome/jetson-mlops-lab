@@ -37,6 +37,17 @@ jobs:
       - name: Copy landing page
         run: cp site/index.html _site/index.html
 
+      - name: Emit chart data
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          data = json.loads(pathlib.Path("benchmarks/vision_compression.json").read_text(encoding="utf-8"))
+          pathlib.Path("_site/data.js").write_text(
+              "window.BENCH = " + json.dumps(data, ensure_ascii=False) + ";\n",
+              encoding="utf-8",
+          )
+          PY
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

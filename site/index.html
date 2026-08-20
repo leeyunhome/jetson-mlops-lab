@@ -3,102 +3,601 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jetson MLOps Lab</title>
+<title>Jetson MLOps Lab — 비전 모델 경량화</title>
 <style>
+  /* 팔레트는 dataviz 기준 팔레트를 그대로 쓴다. 세 슬롯(파랑·주황·아쿠아)은
+     두 모드 모두에서 CVD/대비 검사를 통과한 조합이다. light 모드의 아쿠아는
+     대비 3:1 미만이라 직접 라벨과 표 뷰로 보완한다. */
   :root {
-    --bg: #ffffff;
-    --fg: #1a1a1a;
-    --muted: #5c5c5c;
-    --border: #e0e0e0;
-    --card: #f7f7f7;
-    --accent: #2b6cb0;
+    color-scheme: light;
+    --plane:          #f9f9f7;
+    --surface:        #fcfcfb;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --grid:           #e1e0d9;
+    --axis:           #c3c2b7;
+    --border:         rgba(11, 11, 11, 0.10);
+    --series-1:       #2a78d6;
+    --series-2:       #eb6834;
+    --series-3:       #1baf7a;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #14161a;
-      --fg: #e8e8e8;
-      --muted: #a0a0a0;
-      --border: #2c2f36;
-      --card: #1c1f25;
-      --accent: #7aa7d9;
+      color-scheme: dark;
+      --plane:          #0d0d0d;
+      --surface:        #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --grid:           #2c2c2a;
+      --axis:           #383835;
+      --border:         rgba(255, 255, 255, 0.10);
+      --series-1:       #3987e5;
+      --series-2:       #d95926;
+      --series-3:       #199e70;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #14161a;
-    --fg: #e8e8e8;
-    --muted: #a0a0a0;
-    --border: #2c2f36;
-    --card: #1c1f25;
-    --accent: #7aa7d9;
+    color-scheme: dark;
+    --plane:          #0d0d0d;
+    --surface:        #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --grid:           #2c2c2a;
+    --axis:           #383835;
+    --border:         rgba(255, 255, 255, 0.10);
+    --series-1:       #3987e5;
+    --series-2:       #d95926;
+    --series-3:       #199e70;
   }
+
+  * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 3rem 1.25rem 5rem;
-    background: var(--bg);
-    color: var(--fg);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    padding: 3.5rem 1.25rem 5rem;
+    background: var(--plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", "Malgun Gothic", sans-serif;
     line-height: 1.7;
+    -webkit-text-size-adjust: 100%;
   }
-  main { max-width: 46rem; margin: 0 auto; }
-  h1 { font-size: 2rem; margin: 0 0 .5rem; letter-spacing: -0.02em; }
-  .sub { color: var(--muted); margin: 0 0 2.5rem; }
-  h2 { font-size: 1.15rem; margin: 2.5rem 0 1rem; }
-  a { color: var(--accent); }
-  .card {
-    display: block;
+  main { max-width: 52rem; margin: 0 auto; }
+
+  h1 { font-size: 2rem; margin: 0 0 .4rem; letter-spacing: -0.02em; }
+  .lede { color: var(--text-secondary); margin: 0 0 1.5rem; font-size: 1.02rem; }
+  h2 {
+    font-size: 1.2rem;
+    margin: 3.5rem 0 .35rem;
+    letter-spacing: -0.01em;
+  }
+  .note { color: var(--text-secondary); margin: 0 0 1.25rem; font-size: .94rem; }
+  a { color: var(--series-1); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 2.5rem; padding: 0; list-style: none; }
+  .chips li {
     border: 1px solid var(--border);
-    background: var(--card);
+    border-radius: 999px;
+    padding: .15rem .7rem;
+    font-size: .82rem;
+    color: var(--text-secondary);
+    background: var(--surface);
+  }
+
+  /* 헤드라인 숫자 — 차트가 아니라 stat tile이 맞는 자리 */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .75rem; margin: 0 0 1rem; }
+  .tile {
+    border: 1px solid var(--border);
+    background: var(--surface);
     border-radius: 10px;
-    padding: 1.25rem 1.4rem;
-    text-decoration: none;
-    color: inherit;
+    padding: 1rem 1.1rem;
   }
-  .card:hover { border-color: var(--accent); }
-  .card h3 { margin: 0 0 .4rem; font-size: 1.05rem; color: var(--accent); }
-  .card p { margin: 0; color: var(--muted); font-size: .93rem; }
-  .facts { list-style: none; padding: 0; margin: 0; }
-  .facts li {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: .6rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: .93rem;
+  .tile .value { font-size: 1.9rem; font-weight: 600; letter-spacing: -0.02em; display: block; line-height: 1.15; }
+  .tile .name { font-size: .85rem; color: var(--text-secondary); display: block; margin-top: .15rem; }
+  .tile .sub { font-size: .78rem; color: var(--text-muted); display: block; }
+
+  figure {
+    margin: 0;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 10px;
+    padding: 1.25rem 1.25rem 1rem;
+    overflow-x: auto;
   }
-  .facts li span:first-child { color: var(--muted); }
+  figcaption { font-size: .85rem; color: var(--text-muted); margin-top: .5rem; }
+  .chart { width: 100%; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 1rem; margin: 0 0 .75rem; padding: 0; list-style: none; font-size: .85rem; color: var(--text-secondary); }
+  .legend li { display: flex; align-items: center; gap: .4rem; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
+  details { margin-top: 1rem; }
+  summary { cursor: pointer; font-size: .88rem; color: var(--text-secondary); }
+  table { border-collapse: collapse; width: 100%; margin-top: .75rem; font-size: .85rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: .4rem .6rem; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child { text-align: left; font-variant-numeric: normal; }
+  thead th { color: var(--text-secondary); font-weight: 600; }
+
+  .tooltip {
+    position: fixed;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .1s;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .5rem .65rem;
+    font-size: .82rem;
+    line-height: 1.5;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .18);
+    z-index: 10;
+    white-space: nowrap;
+  }
+  .tooltip strong { display: block; font-size: .85rem; }
+  .tooltip .dim { color: var(--text-secondary); }
+
   footer {
-    margin-top: 3.5rem;
+    margin-top: 4rem;
     padding-top: 1.25rem;
     border-top: 1px solid var(--border);
-    color: var(--muted);
-    font-size: .88rem;
+    color: var(--text-muted);
+    font-size: .85rem;
   }
+  footer a { color: var(--text-secondary); }
 </style>
 </head>
 <body>
 <main>
-  <h1>Jetson MLOps Lab</h1>
-  <p class="sub">Jetson Orin Nano 한 대로 추론 최적화 · 모델 경량화를 바닥부터 구현한 실습 기록</p>
+  <h1>비전 모델 경량화 on Jetson Orin Nano</h1>
+  <p class="lede">
+    ResNet-18 한 모델을 CPU 양자화와 TensorRT로 각각 최적화하고,
+    지연시간·모델 크기·전송 오버헤드를 같은 조건에서 실측해 비교했습니다.
+  </p>
+  <ul class="chips" id="chips"></ul>
 
-  <h2>비전 모델 경량화 트랙</h2>
-  <a class="card" href="notebooks/vision_compression_practice.html">
-    <h3>ResNet-18 INT8 양자화 &amp; TensorRT 벤치마크</h3>
-    <p>PyTorch PTQ(qnnpack, CPU)와 TensorRT(FP32/FP16/INT8, GPU)를 같은 모델에 적용해
-       정확도 · 지연시간 · 모델 크기의 트레이드오프를 실측 비교했습니다.</p>
-  </a>
+  <h2>한눈에</h2>
+  <p class="note">배치 16장 기준, GPU 연산 시간(mean).</p>
+  <div class="tiles" id="tiles"></div>
 
-  <h2>실행 환경</h2>
-  <ul class="facts">
-    <li><span>디바이스</span><span>Jetson Orin Nano (JetPack 7.2, L4T R39)</span></li>
-    <li><span>GPU</span><span>Orin, Compute Capability 8.7</span></li>
-    <li><span>프레임워크</span><span>PyTorch 2.13.0+cu130 · torchvision 0.28.0</span></li>
-    <li><span>양자화 백엔드</span><span>qnnpack (ARM)</span></li>
-  </ul>
+  <h2>1. 최적화 단계별 추론 지연시간</h2>
+  <p class="note">
+    같은 ResNet-18을 실행 방식만 바꿔가며 측정했습니다. PyTorch로 그냥 돌린 기준선에서
+    TensorRT INT8까지 내려오면 배치당 연산 시간이 <strong id="ladder-claim"></strong> 줄어듭니다.
+  </p>
+  <figure>
+    <div id="chart-ladder" class="chart"></div>
+    <figcaption>단일 계열이므로 범례 없이 막대 끝에 값을 직접 표기했습니다.</figcaption>
+  </figure>
 
-  <footer>
-    소스 코드 · 노트북 원본:
-    <a href="https://github.com/leeyunhome/jetson-mlops-lab">github.com/leeyunhome/jetson-mlops-lab</a>
-  </footer>
+  <h2>2. 빨라질수록 드러나는 전송 병목</h2>
+  <p class="note">
+    TensorRT 엔진의 종단 지연시간을 <em>GPU 연산</em>과 <em>호스트↔GPU 데이터 전송</em>으로
+    나눠 봤습니다. 연산은 5배 넘게 빨라지지만 전송 비용은 거의 그대로라, 전체에서 전송이
+    차지하는 비중이 <strong id="overhead-claim"></strong>로 늘어납니다. 더 낮은 정밀도로
+    내려갈수록 최적화 대상이 연산에서 데이터 이동으로 옮겨간다는 뜻입니다.
+  </p>
+  <figure>
+    <ul class="legend" id="legend-breakdown"></ul>
+    <div id="chart-breakdown" class="chart"></div>
+    <figcaption>누적 막대. 각 구간에 실제 값을 직접 표기했습니다.</figcaption>
+  </figure>
+
+  <h2>3. CPU 양자화의 역설</h2>
+  <p class="note">
+    같은 INT8 양자화라도 CPU에서는 이야기가 다릅니다. 모델은 4배 넘게 작아지지만
+    이 Jetson의 CPU에서는 오히려 <strong id="paradox-claim"></strong>.
+    크기와 시간은 단위가 다르므로 축을 겹치지 않고, FP32를 100으로 둔 상대값으로 나란히 놓았습니다.
+  </p>
+  <figure>
+    <ul class="legend" id="legend-slope"></ul>
+    <div id="chart-slope" class="chart"></div>
+    <figcaption>기울기 그래프. FP32 = 100 기준의 상대 변화.</figcaption>
+  </figure>
+
+  <details>
+    <summary>측정값 전체 보기 (표)</summary>
+    <table id="table-configs">
+      <thead>
+        <tr><th>구성</th><th>연산 시간 (ms)</th><th>크기 (MB)</th><th>eager 대비</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <table id="table-cpu">
+      <thead>
+        <tr><th>CPU 양자화</th><th>지연시간 (ms)</th><th>크기 (MB)</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </details>
+
+  <h2>실습 노트북</h2>
+  <p class="note">
+    위 수치가 나온 코드와 실행 로그는 노트북에 그대로 남아 있습니다 →
+    <a href="notebooks/vision_compression_practice.html">비전 모델 경량화 노트북</a>
+  </p>
+
+  <footer id="provenance"></footer>
 </main>
+
+<div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  const NS = "http://www.w3.org/2000/svg";
+  const data = window.BENCH;
+  const tooltip = document.getElementById("tooltip");
+
+  const fmt = (n, d = 1) => n.toFixed(d);
+  const css = (name) => getComputedStyle(document.body).getPropertyValue(name).trim();
+
+  function el(tag, attrs, text) {
+    const node = document.createElementNS(NS, tag);
+    for (const key in attrs) node.setAttribute(key, attrs[key]);
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function showTip(evt, html) {
+    tooltip.innerHTML = html;
+    tooltip.style.opacity = "1";
+    moveTip(evt);
+  }
+  function moveTip(evt) {
+    const pad = 14;
+    const box = tooltip.getBoundingClientRect();
+    let x = evt.clientX + pad;
+    let y = evt.clientY + pad;
+    if (x + box.width > window.innerWidth - 8) x = evt.clientX - box.width - pad;
+    if (y + box.height > window.innerHeight - 8) y = evt.clientY - box.height - pad;
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
+  }
+  function hideTip() { tooltip.style.opacity = "0"; }
+
+  /* 마크에 호버 레이어를 붙인다. 히트 영역은 마크보다 크게 잡는다. */
+  function hoverable(node, html) {
+    node.style.cursor = "default";
+    node.addEventListener("mouseenter", (e) => showTip(e, html));
+    node.addEventListener("mousemove", moveTip);
+    node.addEventListener("mouseleave", hideTip);
+  }
+
+  /* ---------------------------------------------------------------- 차트 1 */
+
+  function drawLadder(host, width) {
+    const rows = data.configs;
+    const labelW = Math.min(150, Math.max(104, width * 0.26));
+    const valueW = 74;
+    const rowH = 46;
+    const top = 8;
+    const height = top + rows.length * rowH + 10;
+    const plotW = Math.max(60, width - labelW - valueW);
+    const max = Math.max(...rows.map((r) => r.mean_ms));
+
+    const svg = el("svg", {
+      viewBox: `0 0 ${width} ${height}`, width: "100%", height,
+      role: "img", "aria-label": "구성별 추론 지연시간 막대 그래프",
+    });
+
+    rows.forEach((row, i) => {
+      const y = top + i * rowH;
+      const barH = 18;
+      const w = Math.max(2, (row.mean_ms / max) * plotW);
+
+      svg.appendChild(el("text", {
+        x: labelW - 12, y: y + barH / 2 + 5, "text-anchor": "end",
+        fill: css("--text-primary"), "font-size": 13,
+      }, row.label));
+
+      // 4px 라운드 데이터 엔드, 베이스라인에 앵커
+      const bar = el("rect", {
+        x: labelW, y, width: w, height: barH, rx: 4, fill: css("--series-1"),
+      });
+      hoverable(bar,
+        `<strong>${row.label}</strong>` +
+        `<span class="dim">GPU 연산 ${fmt(row.mean_ms, 2)} ms · 크기 ${fmt(row.size_mb)} MB</span>` +
+        `<span class="dim">기준선 대비 ${row.speedup_vs_eager}×</span>`);
+      svg.appendChild(bar);
+
+      svg.appendChild(el("text", {
+        x: labelW + w + 10, y: y + barH / 2 + 5,
+        fill: css("--text-primary"), "font-size": 13,
+      }, `${fmt(row.mean_ms, 2)} ms`));
+
+      svg.appendChild(el("text", {
+        x: labelW, y: y + barH + 15,
+        fill: css("--text-muted"), "font-size": 11,
+      }, row.id === "eager" ? "기준선" : `${row.speedup_vs_eager}× 빠름 · ${fmt(row.size_mb)} MB`));
+    });
+
+    svg.appendChild(el("line", {
+      x1: labelW, y1: top - 4, x2: labelW, y2: height - 8,
+      stroke: css("--axis"), "stroke-width": 1,
+    }));
+
+    host.replaceChildren(svg);
+  }
+
+  /* ---------------------------------------------------------------- 차트 2 */
+
+  const BREAKDOWN = [
+    { key: "gpu_compute", name: "GPU 연산", color: "--series-1" },
+    { key: "transfer", name: "데이터 전송 (호스트↔GPU)", color: "--series-2" },
+  ];
+
+  function breakdownRows() {
+    return data.configs.filter((c) => c.breakdown_ms).map((c) => {
+      const b = c.breakdown_ms;
+      const transfer = b.host_to_device + b.device_to_host;
+      const total = b.gpu_compute + transfer;
+      return {
+        label: c.label,
+        gpu_compute: b.gpu_compute,
+        transfer,
+        total,
+        share: (transfer / total) * 100,
+      };
+    });
+  }
+
+  function drawBreakdown(host, width) {
+    const rows = breakdownRows();
+    const labelW = Math.min(150, Math.max(104, width * 0.26));
+    const valueW = 96;
+    const rowH = 48;
+    const top = 8;
+    const height = top + rows.length * rowH + 10;
+    const plotW = Math.max(60, width - labelW - valueW);
+    const max = Math.max(...rows.map((r) => r.total));
+    const GAP = 2; // 인접 세그먼트 사이 surface 간격
+
+    const svg = el("svg", {
+      viewBox: `0 0 ${width} ${height}`, width: "100%", height,
+      role: "img", "aria-label": "TensorRT 정밀도별 지연시간 구성 누적 막대 그래프",
+    });
+
+    rows.forEach((row, i) => {
+      const y = top + i * rowH;
+      const barH = 18;
+
+      svg.appendChild(el("text", {
+        x: labelW - 12, y: y + barH / 2 + 5, "text-anchor": "end",
+        fill: css("--text-primary"), "font-size": 13,
+      }, row.label));
+
+      let x = labelW;
+      BREAKDOWN.forEach((series, s) => {
+        const value = row[series.key];
+        const w = Math.max(2, (value / max) * plotW - (s > 0 ? GAP : 0));
+        const rect = el("rect", {
+          x, y, width: w, height: barH, rx: 4, fill: css(series.color),
+        });
+        hoverable(rect,
+          `<strong>${row.label} — ${series.name}</strong>` +
+          `<span class="dim">${fmt(value, 3)} ms · 전체의 ${fmt((value / row.total) * 100)}%</span>`);
+        svg.appendChild(rect);
+        x += w + GAP;
+      });
+
+      svg.appendChild(el("text", {
+        x: x + 8, y: y + barH / 2 + 5,
+        fill: css("--text-primary"), "font-size": 13,
+      }, `${fmt(row.total, 2)} ms`));
+
+      // 대비가 낮은 계열을 색만으로 읽게 두지 않도록 값을 직접 적는다.
+      svg.appendChild(el("text", {
+        x: labelW, y: y + barH + 15,
+        fill: css("--text-muted"), "font-size": 11,
+      }, `연산 ${fmt(row.gpu_compute, 2)} ms · 전송 ${fmt(row.transfer, 2)} ms (${fmt(row.share)}%)`));
+    });
+
+    svg.appendChild(el("line", {
+      x1: labelW, y1: top - 4, x2: labelW, y2: height - 8,
+      stroke: css("--axis"), "stroke-width": 1,
+    }));
+
+    host.replaceChildren(svg);
+  }
+
+  /* ---------------------------------------------------------------- 차트 3 */
+
+  function drawSlope(host, width) {
+    const cpu = data.cpu_quantization;
+    const series = [
+      {
+        name: "모델 크기", color: "--series-1",
+        from: 100, to: (cpu.int8.size_mb / cpu.fp32.size_mb) * 100,
+        raw: [`${fmt(cpu.fp32.size_mb)} MB`, `${fmt(cpu.int8.size_mb)} MB`],
+      },
+      {
+        name: "지연시간", color: "--series-2",
+        from: 100, to: (cpu.int8.mean_ms / cpu.fp32.mean_ms) * 100,
+        raw: [`${fmt(cpu.fp32.mean_ms)} ms`, `${fmt(cpu.int8.mean_ms)} ms`],
+      },
+    ];
+
+    const height = 260;
+    const padTop = 26;
+    const padBottom = 40;
+    // 양쪽 끝 라벨("모델 크기 -76.0%", "44.6 MB → 10.7 MB")이 들어갈 폭을 남긴다.
+    const pad = Math.max(120, Math.min(200, width * 0.30));
+    const leftX = pad;
+    const rightX = width - pad;
+    const maxVal = 120;
+    const scale = (v) => padTop + (1 - v / maxVal) * (height - padTop - padBottom);
+
+    const svg = el("svg", {
+      viewBox: `0 0 ${width} ${height}`, width: "100%", height,
+      role: "img", "aria-label": "CPU FP32 대비 INT8의 크기·지연시간 상대 변화 기울기 그래프",
+    });
+
+    // 기준선 100 — 눈금은 뒤로 물러나게
+    svg.appendChild(el("line", {
+      x1: leftX, y1: scale(100), x2: rightX, y2: scale(100),
+      stroke: css("--grid"), "stroke-width": 1, "stroke-dasharray": "3 3",
+    }));
+
+    [["FP32", leftX, "middle"], ["INT8", rightX, "middle"]].forEach(([name, x, anchor]) => {
+      svg.appendChild(el("text", {
+        x, y: height - 14, "text-anchor": anchor,
+        fill: css("--text-secondary"), "font-size": 13,
+      }, name));
+      svg.appendChild(el("line", {
+        x1: x, y1: padTop - 10, x2: x, y2: height - padBottom + 6,
+        stroke: css("--axis"), "stroke-width": 1,
+      }));
+    });
+
+    // 두 계열 모두 FP32 = 100에서 출발하므로 시작점은 하나만 그리고 한 번만 라벨한다.
+    const originY = scale(100);
+    svg.appendChild(el("text", {
+      x: leftX - 14, y: originY + 4, "text-anchor": "end",
+      fill: css("--text-secondary"), "font-size": 12.5,
+    }, "FP32 = 100"));
+
+    series.forEach((s) => {
+      const y2 = scale(s.to);
+      const color = css(s.color);
+
+      svg.appendChild(el("line", {
+        x1: leftX, y1: originY, x2: rightX, y2, stroke: color, "stroke-width": 2,
+        "stroke-linecap": "round",
+      }));
+
+      // 겹치는 마크에는 2px surface 링을 둘러 분리한다
+      const dot = el("circle", {
+        cx: rightX, cy: y2, r: 5, fill: color,
+        stroke: css("--surface"), "stroke-width": 2,
+      });
+      hoverable(dot,
+        `<strong>${s.name}</strong>` +
+        `<span class="dim">FP32 ${s.raw[0]} → INT8 ${s.raw[1]}</span>` +
+        `<span class="dim">상대값 ${fmt(s.to)} (FP32 = 100)</span>`);
+      svg.appendChild(dot);
+
+      const delta = s.to - 100;
+      svg.appendChild(el("text", {
+        x: rightX + 14, y: y2 - 4, "text-anchor": "start",
+        fill: css("--text-primary"), "font-size": 12.5,
+      }, `${s.name} ${delta > 0 ? "+" : ""}${fmt(delta)}%`));
+      svg.appendChild(el("text", {
+        x: rightX + 14, y: y2 + 13, "text-anchor": "start",
+        fill: css("--text-muted"), "font-size": 11.5,
+      }, `${s.raw[0]} → ${s.raw[1]}`));
+    });
+
+    svg.appendChild(el("circle", {
+      cx: leftX, cy: originY, r: 5, fill: css("--text-secondary"),
+      stroke: css("--surface"), "stroke-width": 2,
+    }));
+
+    host.replaceChildren(svg);
+  }
+
+  /* -------------------------------------------------------------- 텍스트/표 */
+
+  function fillStatic() {
+    const configs = data.configs;
+    const best = configs[configs.length - 1];
+    const cpu = data.cpu_quantization;
+    const rows = breakdownRows();
+
+    document.getElementById("chips").replaceChildren(...[
+      data.device.board,
+      `L4T ${data.device.l4t_release.split(" ")[0]}`,
+      `TensorRT ${data.device.tensorrt}`,
+      `torch ${data.device.torch}`,
+      data.workload.model.split(" (")[0],
+      `배치 ${data.workload.batch}`,
+    ].map((t) => { const li = document.createElement("li"); li.textContent = t; return li; }));
+
+    const tiles = [
+      { value: `${best.speedup_vs_eager}×`, name: "TensorRT INT8 속도 향상", sub: "PyTorch eager 대비" },
+      { value: `${fmt(best.mean_ms, 2)} ms`, name: "INT8 배치 연산 시간", sub: `${fmt(best.size_mb)} MB 엔진` },
+      { value: `${cpu.size_ratio}×`, name: "CPU INT8 크기 축소", sub: `단, 속도는 ${cpu.speed_ratio}×` },
+    ];
+    document.getElementById("tiles").replaceChildren(...tiles.map((t) => {
+      const div = document.createElement("div");
+      div.className = "tile";
+      div.innerHTML =
+        `<span class="value">${t.value}</span>` +
+        `<span class="name">${t.name}</span>` +
+        `<span class="sub">${t.sub}</span>`;
+      return div;
+    }));
+
+    document.getElementById("ladder-claim").textContent =
+      `${fmt(configs[0].mean_ms, 1)} ms에서 ${fmt(best.mean_ms, 2)} ms로 ${best.speedup_vs_eager}배`;
+    document.getElementById("overhead-claim").textContent =
+      `${fmt(rows[0].share)}%에서 ${fmt(rows[rows.length - 1].share)}%`;
+    document.getElementById("paradox-claim").textContent =
+      `${fmt((1 / cpu.speed_ratio - 1) * 100)}% 더 느려집니다`;
+
+    [["legend-breakdown", BREAKDOWN.map((s) => ({ name: s.name, color: s.color }))],
+     ["legend-slope", [{ name: "모델 크기", color: "--series-1" }, { name: "지연시간", color: "--series-2" }]]
+    ].forEach(([id, items]) => {
+      document.getElementById(id).replaceChildren(...items.map((item) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span class="swatch" style="background:var(${item.color})"></span>${item.name}`;
+        return li;
+      }));
+    });
+
+    document.querySelector("#table-configs tbody").replaceChildren(...configs.map((c) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${c.label}</td><td>${fmt(c.mean_ms, 2)}</td>` +
+                     `<td>${fmt(c.size_mb)}</td><td>${c.speedup_vs_eager}×</td>`;
+      return tr;
+    }));
+
+    document.querySelector("#table-cpu tbody").replaceChildren(...[
+      ["FP32 (CPU)", cpu.fp32], ["INT8 (CPU)", cpu.int8],
+    ].map(([name, row]) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${name}</td><td>${fmt(row.mean_ms)}</td><td>${fmt(row.size_mb)}</td>`;
+      return tr;
+    }));
+
+    document.getElementById("provenance").innerHTML =
+      `측정 원본: TensorRT 수치는 저장소의 <code>benchmarks/logs/trt_*.log</code>(trtexec 출력),` +
+      ` CPU 수치는 노트북 셀 출력, 기준선은 기기에서 직접 측정한 값입니다.` +
+      ` 데이터셋은 <code>benchmarks/vision_compression.json</code> 하나로 모아 두었습니다.<br>` +
+      `소스: <a href="https://github.com/leeyunhome/jetson-mlops-lab">github.com/leeyunhome/jetson-mlops-lab</a>`;
+  }
+
+  /* ------------------------------------------------------------------ 렌더 */
+
+  const charts = [
+    ["chart-ladder", drawLadder],
+    ["chart-breakdown", drawBreakdown],
+    ["chart-slope", drawSlope],
+  ];
+
+  function renderAll() {
+    charts.forEach(([id, draw]) => {
+      const host = document.getElementById(id);
+      const width = Math.max(320, host.clientWidth || 640);
+      draw(host, width);
+    });
+  }
+
+  fillStatic();
+  renderAll();
+
+  let pending;
+  window.addEventListener("resize", () => {
+    clearTimeout(pending);
+    pending = setTimeout(renderAll, 150);
+  });
+  // 테마가 바뀌면 SVG에 박힌 색도 다시 계산해야 한다
+  const scheme = window.matchMedia("(prefers-color-scheme: dark)");
+  scheme.addEventListener("change", renderAll);
+})();
+</script>
 </body>
 </html>

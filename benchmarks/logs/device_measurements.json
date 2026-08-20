@@ -1,0 +1,28 @@
+{
+  "_note": "trtexec 로그로 얻을 수 없는 값들을 기기에서 직접 측정해 기록한다. 재측정 시 갱신할 것.",
+  "device": {
+    "board": "Jetson Orin Nano",
+    "l4t_release": "R39 (revision 2.0)",
+    "gpu": "Orin (compute capability 8.7)",
+    "torch": "2.13.0+cu130",
+    "torchvision": "0.28.0+cu130",
+    "tensorrt": "10.16"
+  },
+  "pytorch_eager_gpu": {
+    "measured_on": "2026-08-20",
+    "source": "notebooks/vision_compression_practice.ipynb 셀 12와 동일한 코드",
+    "batch": 16,
+    "iters": 20,
+    "min_ms": 56.6395,
+    "median_ms": 57.2693,
+    "mean_ms": 57.253,
+    "p90_ms": 57.5643,
+    "max_ms": 57.5995
+  },
+  "engine_bytes": {
+    "measured_on": "2026-08-18",
+    "fp32": 46924236,
+    "fp16": 23617828,
+    "int8": 12009908
+  }
+}
