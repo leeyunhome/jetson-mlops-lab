@@ -20,6 +20,12 @@ Jetson Orin Nano(JetPack 7.2, L4T R39) 한 대로 LLM MLOps 파이프라인 핵�
 - Jetson의 Python 가상환경은 `~/mlops-lab-env` (Python 3.12.3). torch/transformers/accelerate 등은 전부 이 venv 안에 설치되어 있고, 시스템 파이썬에는 없다.
 - 작업 PC의 `~/.ssh/config`에 `Host jetson`(HostName `192.168.237.8`, ProxyJump `codeql-host`) alias가 등록되어 있어 `ssh jetson` 한 줄로 접속 가능.
 
+### 작업 PC가 여러 대일 수 있음 — 경로가 다를 수 있다
+
+- **작업 PC #1 (Windows, devuser)**: 사내망 밖 세그먼트에 있어 Jetson(`192.168.237.8`)에 직접 못 붙고 **codeql-host를 반드시 거쳐야 함** (이중 홉). `~/.ssh/config`의 `jetson` 항목이 `ProxyJump codeql-host`로 되어 있는 이유.
+- **작업 PC #2 (Linux, deeplearning@deeplearning-H110-D3, 10.10.237.222)**: codeql-host와 같은 사내망 세그먼트에 있어 **Jetson에 직접(단일 홉) SSH 가능** — `ping`/`ssh` 둘 다 codeql-host 경유 없이 바로 됨. 이 PC의 `~/.ssh/config`는 `jetson` 항목에 `ProxyJump` 없이 `HostName 192.168.237.8`만 지정되어 있음. Jupyter 터널도 이 PC→Jetson 1단계 포트포워딩(`ssh -N -L 8888:127.0.0.1:8888 jetson`)만으로 충분, codeql-host를 안 거쳐도 됨.
+- **결론**: "codeql-host를 반드시 거쳐야 한다"는 규칙이 아니라 **"그 PC가 Jetson과 같은 네트워크 세그먼트에 있는지"가 핵심**이다. 새 작업 PC에서는 먼저 `ping 192.168.237.8`로 직접 도달 여부를 확인하고, 되면 codeql-host 홉을 생략할 것.
+
 ## Jupyter 커널 연결 방법
 
 Jetson의 Jupyter Lab 서버는 **의도적으로 `127.0.0.1`(로컬호스트 전용)에만 바인딩**되어 있다 — 네트워크에 코드 실행 서비스를 노출하지 않기 위함. 접근하려면 SSH 포트포워딩만 사용해야 한다 (`--ip=0.0.0.0` 등으로 네트워크에 노출하는 방식은 지양):
