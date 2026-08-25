@@ -107,6 +107,54 @@ def parse_cpu_results(text: str) -> dict:
     return results
 
 
+ONNX_NODES = re.compile(r"^총 노드 (\d+)개, 연산 종류 (\d+)가지", re.MULTILINE)
+FUSION_HEADER = re.compile(
+    r"^TRT (fp32|fp16|int8): 융합 후 레이어 (\d+)개, median 합계 ([\d.]+) ms",
+    re.MULTILINE,
+)
+REFORMAT_LINE = re.compile(r"Reformatting (\d+)개 = ([\d.]+)%")
+FUSION_RATIO = re.compile(
+    r"ONNX 노드 (\d+)개 -> TRT INT8 레이어 (\d+)개\s+\(융합률 ([\d.]+):1\)"
+)
+FUSED_COUNT = re.compile(r"'\+'로 융합된 레이어 (\d+)개, 예: (.+)")
+
+
+def parse_fusion(text: str) -> dict | None:
+    """엔진 레이어 프로파일 셀의 출력에서 융합 결과를 되읽는다.
+
+    해당 셀을 아직 실행하지 않았으면 None을 돌려주고, 사이트는 그 절을 숨긴다.
+    """
+    nodes = ONNX_NODES.search(text)
+    headers = list(FUSION_HEADER.finditer(text))
+    if not nodes or not headers:
+        return None
+
+    engines = []
+    for i, match in enumerate(headers):
+        # Reformatting 줄은 각 헤더 바로 뒤에 붙으므로 다음 헤더 전까지만 본다.
+        end = headers[i + 1].start() if i + 1 < len(headers) else len(text)
+        reformat = REFORMAT_LINE.search(text, match.end(), end)
+        engines.append({
+            "precision": match.group(1).upper(),
+            "layers": int(match.group(2)),
+            "median_total_ms": float(match.group(3)),
+            "reformat_count": int(reformat.group(1)) if reformat else None,
+            "reformat_share_pct": float(reformat.group(2)) if reformat else None,
+        })
+
+    ratio = FUSION_RATIO.search(text)
+    fused = FUSED_COUNT.search(text)
+    return {
+        "source": "notebooks/vision_compression_practice.ipynb (엔진 레이어 프로파일 셀)",
+        "onnx_nodes": int(nodes.group(1)),
+        "onnx_op_types": int(nodes.group(2)),
+        "engines": engines,
+        "int8_fusion_ratio": float(ratio.group(3)) if ratio else None,
+        "int8_fused_layers": int(fused.group(1)) if fused else None,
+        "example": fused.group(2).strip() if fused else None,
+    }
+
+
 EAGER_LINE = re.compile(
     r"^PyTorch FP32 eager \(GPU\):\s+([\d.]+) ms/batch\(\d+\)", re.MULTILINE
 )
@@ -176,8 +224,11 @@ def build() -> dict:
             }
         )
 
+    fusion = parse_fusion(stdout)
+
     return {
         "generated_by": "scripts/collect_benchmarks.py",
+        **({"graph_fusion": fusion} if fusion else {}),
         "device": device["device"],
         "workload": {
             "model": "ResNet-18 (torchvision, ImageNet 사전학습)",

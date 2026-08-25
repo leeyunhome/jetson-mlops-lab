@@ -1,5 +1,36 @@
 {
   "generated_by": "scripts/collect_benchmarks.py",
+  "graph_fusion": {
+    "source": "notebooks/vision_compression_practice.ipynb (엔진 레이어 프로파일 셀)",
+    "onnx_nodes": 49,
+    "onnx_op_types": 7,
+    "engines": [
+      {
+        "precision": "FP32",
+        "layers": 24,
+        "median_total_ms": 27.54,
+        "reformat_count": 1,
+        "reformat_share_pct": 2.8
+      },
+      {
+        "precision": "FP16",
+        "layers": 25,
+        "median_total_ms": 10.34,
+        "reformat_count": 1,
+        "reformat_share_pct": 3.2
+      },
+      {
+        "precision": "INT8",
+        "layers": 23,
+        "median_total_ms": 5.24,
+        "reformat_count": 1,
+        "reformat_share_pct": 4.0
+      }
+    ],
+    "int8_fusion_ratio": 2.1,
+    "int8_fused_layers": 18,
+    "example": "node_Conv_291 + node_relu + node_max_pool2d"
+  },
   "device": {
     "board": "Jetson Orin Nano",
     "l4t_release": "R39 (revision 2.0)",
