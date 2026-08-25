@@ -20,7 +20,7 @@
       "precision": "FP32",
       "runtime": "PyTorch",
       "device": "GPU",
-      "mean_ms": 55.96,
+      "mean_ms": 56.05,
       "median_ms": 57.2693,
       "size_mb": 44.6,
       "speedup_vs_eager": 1.0,
@@ -33,24 +33,24 @@
       "precision": "FP32",
       "runtime": "TensorRT",
       "device": "GPU",
-      "mean_ms": 27.8397,
-      "median_ms": 27.8372,
+      "mean_ms": 28.1899,
+      "median_ms": 28.1885,
       "size_mb": 44.8,
-      "speedup_vs_eager": 2.01,
+      "speedup_vs_eager": 1.99,
       "latency_ms": {
-        "min": 28.4766,
-        "max": 28.592,
-        "mean": 28.5352,
-        "median": 28.5361,
-        "p90": 28.561,
-        "p99": 28.5825
+        "min": 28.7998,
+        "max": 29.1252,
+        "mean": 28.8833,
+        "median": 28.8828,
+        "p90": 28.9131,
+        "p99": 28.968
       },
       "breakdown_ms": {
-        "host_to_device": 0.682404,
-        "gpu_compute": 27.8397,
-        "device_to_host": 0.0131048
+        "host_to_device": 0.680582,
+        "gpu_compute": 28.1899,
+        "device_to_host": 0.0128314
       },
-      "throughput_qps": 35.5945,
+      "throughput_qps": 35.1517,
       "source_log": "benchmarks/logs/trt_fp32.log"
     },
     {
@@ -59,24 +59,24 @@
       "precision": "FP16",
       "runtime": "TensorRT",
       "device": "GPU",
-      "mean_ms": 10.6346,
-      "median_ms": 10.6365,
+      "mean_ms": 10.6277,
+      "median_ms": 10.6303,
       "size_mb": 22.5,
-      "speedup_vs_eager": 5.26,
+      "speedup_vs_eager": 5.27,
       "latency_ms": {
-        "min": 11.2563,
-        "max": 11.4885,
-        "mean": 11.3635,
-        "median": 11.3715,
-        "p90": 11.3892,
-        "p99": 11.4275
+        "min": 11.2598,
+        "max": 11.4491,
+        "mean": 11.3386,
+        "median": 11.3365,
+        "p90": 11.3855,
+        "p99": 11.4192
       },
       "breakdown_ms": {
-        "host_to_device": 0.713571,
-        "gpu_compute": 10.6346,
-        "device_to_host": 0.0153259
+        "host_to_device": 0.695278,
+        "gpu_compute": 10.6277,
+        "device_to_host": 0.0156247
       },
-      "throughput_qps": 93.6813,
+      "throughput_qps": 93.7477,
       "source_log": "benchmarks/logs/trt_fp16.log"
     },
     {
@@ -85,24 +85,24 @@
       "precision": "INT8",
       "runtime": "TensorRT",
       "device": "GPU",
-      "mean_ms": 5.41365,
-      "median_ms": 5.41479,
-      "size_mb": 11.5,
-      "speedup_vs_eager": 10.34,
+      "mean_ms": 5.396,
+      "median_ms": 5.39594,
+      "size_mb": 11.4,
+      "speedup_vs_eager": 10.39,
       "latency_ms": {
-        "min": 6.00024,
-        "max": 6.11269,
-        "mean": 6.04466,
-        "median": 6.04492,
-        "p90": 6.06372,
-        "p99": 6.09892
+        "min": 5.97534,
+        "max": 6.07722,
+        "mean": 6.02598,
+        "median": 6.02628,
+        "p90": 6.04123,
+        "p99": 6.05542
       },
       "breakdown_ms": {
-        "host_to_device": 0.612931,
-        "gpu_compute": 5.41365,
-        "device_to_host": 0.0180773
+        "host_to_device": 0.611937,
+        "gpu_compute": 5.396,
+        "device_to_host": 0.0180429
       },
-      "throughput_qps": 184.301,
+      "throughput_qps": 184.911,
       "source_log": "benchmarks/logs/trt_int8.log"
     }
   ],
@@ -111,16 +111,16 @@
     "source": "notebooks/vision_compression_practice.ipynb",
     "batch": 16,
     "fp32": {
-      "mean_ms": 798.4,
+      "mean_ms": 778.1,
       "size_mb": 44.6,
       "batch": 16
     },
     "int8": {
-      "mean_ms": 906.8,
+      "mean_ms": 906.7,
       "size_mb": 10.7,
       "batch": 16
     },
     "size_ratio": 4.17,
-    "speed_ratio": 0.88
+    "speed_ratio": 0.86
   }
 }
