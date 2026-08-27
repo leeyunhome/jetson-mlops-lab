@@ -62,6 +62,14 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - **torch 2.13 ONNX export는 `onnxscript` 필요**하고, 큰 가중치를 **외부 데이터 파일(`*.onnx.data`)로 분리 저장**한다 — `.onnx`와 `.onnx.data`가 같은 폴더에 함께 있어야 trtexec가 읽는다.
 - **PowerShell→plink 원격 명령에서 `$?`를 쓰지 말 것** — PowerShell이 자체 `$?`(True/False)로 확장해버려 원격 bash에 엉뚱하게 전달된다. 원격 종료코드가 필요하면 다른 방식(로그 파일 확인 등)을 쓸 것. (`\"a|b\"` 형태의 grep 패턴도 PowerShell 파서가 깨뜨리므로, 원격에서 grep 대신 파일로 저장 후 `tail`로 읽는 게 안전.)
 
+### 객체 계수 파이프라인 트랙 (vision_counting_pipeline_practice.ipynb) 관련
+- **`ultralytics`는 반드시 `--no-deps`로 설치할 것** — `ultralytics`와 `ultralytics-thop` 둘 다 torch를 의존성으로 걸고 있어, 그냥 설치하면 위 torchvision과 똑같이 `torch 2.13.0+cu130`을 일반 빌드로 덮어쓴다. torch와 무관한 순수 의존성(opencv-python-headless, psutil, py-cpuinfo, PyYAML, matplotlib, scipy, pandas)만 정상 설치한다. 추적 실행 시 ultralytics가 `lap`을 자체 AutoUpdate로 설치하는데, numpy만 의존하므로 무해하다.
+- **설치 검증에 `importlib.reload(torch)`를 쓰지 말 것** — 이미 로드된 torch를 reload하면 `TORCH_LIBRARY('triton')` 중복 등록으로 `RuntimeError`가 난다. `importlib.metadata.version("torch")`로 **디스크 메타데이터**를 설치 전후 비교하는 방식이 안전하고, pip 교체 감지에도 이쪽이 정확하다.
+- **matplotlib 그래프 텍스트에 한글을 쓰지 말 것** — 이 Jetson에 한글 폰트가 없어 `Glyph missing from font(s) DejaVu Sans` 경고와 함께 □로 렌더링된다. 그래프 제목·축은 영문, `print` 출력과 마크다운 설명은 한글로 분리한다.
+- **노트북별로 새 커널을 띄울 것** — 이미 다른 노트북에 물린 커널을 고르면 `WORK`, `model` 같은 전역 변수가 충돌한다.
+- **샘플 이미지는 실행 시점 다운로드만 하고 저장소에 포함하지 않는다** (COCO val2017 / Laboro Tomato CC BY-NC-SA).
+- **`trtexec --dumpProfile` 표는 숫자 4열이 앞, 레이어 이름이 뒤**(TensorRT 10.x). 마지막 `Total` 행은 집계에서 제외해야 한다.
+
 ## 진행 현황 및 구조
 
 Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). **✅(직접 실습 완료)와 📝 준비됨(노트북 작성·Jetson 실기기 검증은 끝났지만 사용자가 아직 직접 실습 전)을 구분할 것** — Claude가 노트북을 대신 작성/검증했다고 곧바로 ✅로 표시하지 말고, 사용자가 실제로 그 Day를 진행했다고 확인해줄 때만 ✅로 올릴 것.

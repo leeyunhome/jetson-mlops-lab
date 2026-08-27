@@ -32,7 +32,8 @@ jobs:
           mkdir -p _site/notebooks
           jupyter nbconvert --to html \
             --output-dir _site/notebooks \
-            notebooks/vision_compression_practice.ipynb
+            notebooks/vision_compression_practice.ipynb \
+            notebooks/vision_counting_pipeline_practice.ipynb
 
       - name: Copy landing page
         run: cp site/index.html _site/index.html

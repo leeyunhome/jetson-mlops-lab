@@ -27,6 +27,7 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 | 주제 | 상태 | 노트북 | 핵심 |
 |---|---|---|---|
 | 비전 모델 경량화 (torchvision 양자화 + TensorRT) | ✅ | [vision_compression_practice](notebooks/vision_compression_practice.ipynb) | ResNet-18을 INT8 양자화(CPU) vs TensorRT(GPU, FP32/FP16/INT8)로 비교. TensorRT INT8이 PyTorch eager 대비 10.4배 빠름(실측). CPU INT8은 4.2배 작아지지만 오히려 16% 느림 |
+| 이동 카메라 객체 계수 파이프라인 (검출 → 추적 → RGB-D → TensorRT) | ✅ | [vision_counting_pipeline_practice](notebooks/vision_counting_pipeline_practice.ipynb) | 카메라가 이동하면 프레임별 합산이 고유 개수의 **9.4배**로 부풀려짐 — ByteTrack으로 ID를 유지해 중복 제거. COCO 사전학습 가중치를 다른 도메인 이미지에 적용하면 검출된 7개가 **전부 오분류**(해당 클래스가 COCO에 없음). depth 역투영으로 픽셀→mm 변환(같은 60px 박스가 거리에 따라 3배 차이). YOLO11n TensorRT FP16 **30 → 135 FPS**(4.4배) |
 
 ## 구조
 
