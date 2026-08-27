@@ -75,6 +75,11 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - `yolov8s-world.pt`는 `ultralytics`가 최초 1회 자동 다운로드한다(`YOLO11n`과 마찬가지로 이미 `--no-deps` 설치된 환경 재사용, 추가 pip 설치 없음).
 - 오픈보캡 검출은 폐쇄형(YOLO11n) 대비 느리다 — 실시간이 필요하면 이 트랙은 프로토타이핑/희귀 클래스용으로만 쓰고 배포는 파인튜닝된 폐쇄형 모델로 가야 한다.
 
+### YOLO-World 파인튜닝 (yolo_world_greenhouse_practice.ipynb 4~5단계) 관련
+- **COCO bbox → YOLO 라벨 변환 시 클래스는 단일(`tomato`)로 합칠 것** — 3클래스(완숙/반숙/미숙)로 하면 제로샷 프롬프트(`"tomato"` 하나)와 비교 기준이 어긋난다.
+- **`tomato_ripeness_training_practice`의 데이터를 재사용** — `~/tomato_lab/laboro_tomato_big`를 다시 받지 않고 그대로 쓴다. 그 노트북의 [코드 1]을 먼저 실행해둬야 한다.
+- **파인튜닝 전/후 비교는 검출 개수가 아니라 신뢰도로 볼 것** — "tomato"는 흔한 단어라 제로샷도 이미 잘 잡는 경우가 많다. 개수 차이가 작다고 파인튜닝이 무의미했다고 결론 내리지 말 것.
+
 ## 진행 현황 및 구조
 
 Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). **✅(직접 실습 완료)와 📝 준비됨(노트북 작성·Jetson 실기기 검증은 끝났지만 사용자가 아직 직접 실습 전)을 구분할 것** — Claude가 노트북을 대신 작성/검증했다고 곧바로 ✅로 표시하지 말고, 사용자가 실제로 그 Day를 진행했다고 확인해줄 때만 ✅로 올릴 것.
