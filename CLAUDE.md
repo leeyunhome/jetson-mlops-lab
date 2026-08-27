@@ -79,7 +79,11 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - **`YOLO(...)` 로드 직후 `.to(device)`로 명시적으로 GPU에 고정할 것** — 안 하면 `set_classes()`를 두 번째 호출할 때 `RuntimeError: Expected all tensors to be on the same device`(CLIP 텍스트 인코더가 캐시된 디바이스와 검출 본체 디바이스가 어긋남)가 난다. 검출 본체는 추론 시 자동으로 GPU로 옮겨지지만, `set_classes`가 쓰는 CLIP 텍스트 인코더는 별도로 캐시되어 같이 옮겨지지 않는다.
 - 새 `YOLO(...)` 인스턴스를 만들 때마다(예: 파인튜닝 전/후 비교에서 원본과 파인튜닝된 가중치를 각각 새로 로드할 때) 매번 `.to(device)`를 다시 해줘야 한다 — 이전 인스턴스에 해둔 게 새 인스턴스에 적용되지 않는다.
 
-### YOLO-World 파인튜닝 (yolo_world_greenhouse_practice.ipynb 4~5단계) 관련
+### YOLO-World 파인튜닝
+- **`model.train()`을 batch=8, imgsz=640으로 돌리면 커널이 죽었다** (최초 배치 처리 직전, 옵티마이저 설정 직후) — 8GB 통합메모리에서 YOLO-World(CLIP 포함) 학습은 추론보다 메모리를 훨씬 많이 쓴다. `batch=4, imgsz=480, cache=False`로 낮춰서 재시도했다.
+- **좀비 Jupyter 커널이 스왑을 먹는다** — 노트북을 닫아도 커널이 자동으로 안 죽는 경우가 있다(`ps aux | grep ipykernel`로 확인). 며칠 전부터 떠 있던 커널이 스왑을 99%까지 채워 다른 노트북 실행 중 크래시를 유발한 사례가 있었다. 무거운 작업(학습) 전에는 안 쓰는 커널을 `kill <PID>`로 정리할 것.
+
+ (yolo_world_greenhouse_practice.ipynb 4~5단계) 관련
 - **COCO bbox → YOLO 라벨 변환 시 클래스는 단일(`tomato`)로 합칠 것** — 3클래스(완숙/반숙/미숙)로 하면 제로샷 프롬프트(`"tomato"` 하나)와 비교 기준이 어긋난다.
 - **`tomato_ripeness_training_practice`의 데이터를 재사용** — `~/tomato_lab/laboro_tomato_big`를 다시 받지 않고 그대로 쓴다. 그 노트북의 [코드 1]을 먼저 실행해둬야 한다.
 - **파인튜닝 전/후 비교는 검출 개수가 아니라 신뢰도로 볼 것** — "tomato"는 흔한 단어라 제로샷도 이미 잘 잡는 경우가 많다. 개수 차이가 작다고 파인튜닝이 무의미했다고 결론 내리지 말 것.
