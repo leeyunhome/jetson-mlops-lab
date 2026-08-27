@@ -75,6 +75,10 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - `yolov8s-world.pt`는 `ultralytics`가 최초 1회 자동 다운로드한다(`YOLO11n`과 마찬가지로 이미 `--no-deps` 설치된 환경 재사용, 추가 pip 설치 없음).
 - 오픈보캡 검출은 폐쇄형(YOLO11n) 대비 느리다 — 실시간이 필요하면 이 트랙은 프로토타이핑/희귀 클래스용으로만 쓰고 배포는 파인튜닝된 폐쇄형 모델로 가야 한다.
 
+### YOLO-World 일반 (yolo_world_greenhouse_practice.ipynb) 관련
+- **`YOLO(...)` 로드 직후 `.to(device)`로 명시적으로 GPU에 고정할 것** — 안 하면 `set_classes()`를 두 번째 호출할 때 `RuntimeError: Expected all tensors to be on the same device`(CLIP 텍스트 인코더가 캐시된 디바이스와 검출 본체 디바이스가 어긋남)가 난다. 검출 본체는 추론 시 자동으로 GPU로 옮겨지지만, `set_classes`가 쓰는 CLIP 텍스트 인코더는 별도로 캐시되어 같이 옮겨지지 않는다.
+- 새 `YOLO(...)` 인스턴스를 만들 때마다(예: 파인튜닝 전/후 비교에서 원본과 파인튜닝된 가중치를 각각 새로 로드할 때) 매번 `.to(device)`를 다시 해줘야 한다 — 이전 인스턴스에 해둔 게 새 인스턴스에 적용되지 않는다.
+
 ### YOLO-World 파인튜닝 (yolo_world_greenhouse_practice.ipynb 4~5단계) 관련
 - **COCO bbox → YOLO 라벨 변환 시 클래스는 단일(`tomato`)로 합칠 것** — 3클래스(완숙/반숙/미숙)로 하면 제로샷 프롬프트(`"tomato"` 하나)와 비교 기준이 어긋난다.
 - **`tomato_ripeness_training_practice`의 데이터를 재사용** — `~/tomato_lab/laboro_tomato_big`를 다시 받지 않고 그대로 쓴다. 그 노트북의 [코드 1]을 먼저 실행해둬야 한다.
