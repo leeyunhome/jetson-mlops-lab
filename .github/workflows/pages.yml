@@ -36,6 +36,11 @@ jobs:
             notebooks/vision_counting_pipeline_practice.ipynb \
             notebooks/tomato_ripeness_training_practice.ipynb
 
+
+      - name: Copy notebook assets (images referenced by markdown cells)
+        run: |
+          mkdir -p _site/notebooks/assets
+          cp -r notebooks/assets/. _site/notebooks/assets/
       - name: Render mermaid diagrams in notebook HTML
         run: |
           python - <<'PY'
