@@ -29,6 +29,7 @@ Jetson Orin Nano (JetPack 7.2) 한 대로 LLM MLOps 파이프라인의 핵심 �
 | 비전 모델 경량화 (torchvision 양자화 + TensorRT) | ✅ | [vision_compression_practice](notebooks/vision_compression_practice.ipynb) | ResNet-18을 INT8 양자화(CPU) vs TensorRT(GPU, FP32/FP16/INT8)로 비교. TensorRT INT8이 PyTorch eager 대비 10.4배 빠름(실측). CPU INT8은 4.2배 작아지지만 오히려 16% 느림 |
 | 이동 카메라 객체 계수 파이프라인 (검출 → 추적 → RGB-D → TensorRT) | ✅ | [vision_counting_pipeline_practice](notebooks/vision_counting_pipeline_practice.ipynb) | 카메라가 이동하면 프레임별 합산이 고유 개수의 **9.4배**로 부풀려짐 — ByteTrack으로 ID를 유지해 중복 제거. COCO 사전학습 가중치를 다른 도메인 이미지에 적용하면 검출된 7개가 **전부 오분류**(해당 클래스가 COCO에 없음). depth 역투영으로 픽셀→mm 변환(같은 60px 박스가 거리에 따라 3배 차이). YOLO11n TensorRT FP16 **30 → 135 FPS**(4.4배) |
 | 토마토 숙성도 분류기 (PyTorch 학습 전 과정: COCO crop → transfer learning → 평가) | ✅ | [tomato_ripeness_training_practice](notebooks/tomato_ripeness_training_practice.ipynb) | 지금까지 트랙은 전부 사전학습 가중치 사용 — 여기서는 모델을 직접 학습. ResNet18 백본 동결(학습 대상 0.01%) + 3-class 헤드, class weight로 불균형(4.4배) 보정. val 정확도 **0.793**(기준선 0.333). 반숙 클래스가 가장 어려움(recall 0.63) — 완숙·미숙 사이 넓은 스펙트럼이라 양쪽으로 오분류 |
+| YOLO-World 오픈보캡 검출 (도메인 갭을 프롬프트로 해결) | 📝 준비됨 | [yolo_world_greenhouse_practice](notebooks/yolo_world_greenhouse_practice.ipynb) | 위 트랙에서 COCO 사전학습 검출기가 실패했던 바로 그 이미지에, 재학습 없이 `model.set_classes(["tomato"])` 프롬프트만으로 재도전. 폐쇄형 검출기(파인튜닝 필요) vs 오픈보캡(프롬프트만) 트레이드오프를 다룸 |
 
 ## 구조
 

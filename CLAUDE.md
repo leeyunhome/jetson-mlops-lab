@@ -70,6 +70,11 @@ nohup ~/mlops-lab-env/bin/jupyter lab --no-browser --ip=127.0.0.1 --port=8888 > 
 - **샘플 이미지는 실행 시점 다운로드만 하고 저장소에 포함하지 않는다** (COCO val2017 / Laboro Tomato CC BY-NC-SA).
 - **`trtexec --dumpProfile` 표는 숫자 4열이 앞, 레이어 이름이 뒤**(TensorRT 10.x). 마지막 `Total` 행은 집계에서 제외해야 한다.
 
+### YOLO-World 트랙 (yolo_world_greenhouse_practice.ipynb) 관련
+- **`model.set_classes([...])`는 추론 직전에 매번 호출할 것** — 이전 셀에서 다른 프롬프트로 설정했다면 남아있는 상태로 추론된다. 프롬프트를 바꿔가며 비교하는 셀([코드 4])에서는 루프 안에서 매번 `set_classes`를 다시 부른다.
+- `yolov8s-world.pt`는 `ultralytics`가 최초 1회 자동 다운로드한다(`YOLO11n`과 마찬가지로 이미 `--no-deps` 설치된 환경 재사용, 추가 pip 설치 없음).
+- 오픈보캡 검출은 폐쇄형(YOLO11n) 대비 느리다 — 실시간이 필요하면 이 트랙은 프로토타이핑/희귀 클래스용으로만 쓰고 배포는 파인튜닝된 폐쇄형 모델로 가야 한다.
+
 ## 진행 현황 및 구조
 
 Day별 진행 상태는 `README.md`의 표로 관리한다 (Day 0~6, PyTorch→HuggingFace부터 평가/모니터링까지). **✅(직접 실습 완료)와 📝 준비됨(노트북 작성·Jetson 실기기 검증은 끝났지만 사용자가 아직 직접 실습 전)을 구분할 것** — Claude가 노트북을 대신 작성/검증했다고 곧바로 ✅로 표시하지 말고, 사용자가 실제로 그 Day를 진행했다고 확인해줄 때만 ✅로 올릴 것.
