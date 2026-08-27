@@ -33,7 +33,47 @@ jobs:
           jupyter nbconvert --to html \
             --output-dir _site/notebooks \
             notebooks/vision_compression_practice.ipynb \
-            notebooks/vision_counting_pipeline_practice.ipynb
+            notebooks/vision_counting_pipeline_practice.ipynb \
+            notebooks/tomato_ripeness_training_practice.ipynb
+
+      - name: Render mermaid diagrams in notebook HTML
+        run: |
+          python - <<'PY'
+          import glob, pathlib
+
+          # nbconvert는 마크다운 셀의 ```mermaid 코드블록을
+          # <pre><code class="language-mermaid">...</code></pre>로만 렌더링하고
+          # 그림으로 바꿔주지는 않는다. 여기서 mermaid.js를 붙여 브라우저에서
+          # 그 코드블록을 실제 다이어그램으로 바꾼다.
+          snippet = '''
+          <script type="module">
+          import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+          mermaid.initialize({ startOnLoad: false, theme: "neutral" });
+          document
+            .querySelectorAll('pre > code[class*="language-mermaid"], pre > code.mermaid, code[class*="mermaid"]')
+            .forEach((el, i) => {
+              const pre = el.closest("pre");
+              const div = document.createElement("div");
+              div.className = "mermaid";
+              div.id = "mermaid-diagram-" + i;
+              div.textContent = el.textContent;
+              pre.replaceWith(div);
+            });
+          mermaid.run();
+          </script>
+          '''
+
+          for f in glob.glob("_site/notebooks/*.html"):
+              path = pathlib.Path(f)
+              html = path.read_text(encoding="utf-8")
+              if "</body>" in html:
+                  html = html.replace("</body>", snippet + "</body>")
+              else:
+                  html += snippet
+              path.write_text(html, encoding="utf-8")
+              print("mermaid.js injected:", f)
+          PY
+
 
       - name: Copy landing page
         run: cp site/index.html _site/index.html
