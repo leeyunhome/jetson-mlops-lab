@@ -52,6 +52,7 @@ jobs:
           # 그림으로 바꿔주지는 않는다. 여기서 mermaid.js를 붙여 브라우저에서
           # 그 코드블록을 실제 다이어그램으로 바꾼다.
           snippet = '''
+          <script src="https://leeyunhome.github.io/ga.js" async></script>
           <script type="module">
           import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
           mermaid.initialize({ startOnLoad: false, theme: "neutral" });
